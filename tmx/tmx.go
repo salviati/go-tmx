@@ -28,7 +28,8 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"encoding/base64"
-	"encoding/csv"
+	"strings"
+	"strconv"
 	"encoding/xml"
 	"errors"
 	"io"
@@ -138,18 +139,6 @@ type Properties struct {
 	Value string `xml:"value,attr"`
 }
 
-type csvReader struct {
-	r *csv.Reader
-}
-
-func (r *csvReader) Read([]byte) (int, error) {
-	panic("not implemented") // BUG(utkan); Handle CSV
-}
-
-func newCSVReader(r io.Reader) *csvReader {
-	return &csvReader{csv.NewReader(r)}
-}
-
 func (d *Data) decode() (data []byte, err error) {
 	rawData := bytes.TrimSpace(d.RawData)
 	r := bytes.NewReader(rawData)
@@ -159,7 +148,13 @@ func (d *Data) decode() (data []byte, err error) {
 	case "base64":
 		encr = base64.NewDecoder(base64.StdEncoding, r)
 	case "csv":
-		encr = newCSVReader(r)
+		str := strings.Split(string(rawData), ",")
+		decoded := make([]byte, len(str))
+		for i, s := range str {
+			d, _ := strconv.ParseUint(s, 10, 8)
+			decoded[i] = uint8(d)
+		}
+		encr = bytes.NewReader(decoded)
 	default:
 		err = UnknownEncoding
 		return
