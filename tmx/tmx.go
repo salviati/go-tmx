@@ -90,7 +90,7 @@ type Data struct {
 }
 
 type DataTile struct {
-	GID int `xml:"gid,attr"`
+	GID uint `xml:"gid,attr"`
 }
 
 type ObjectGroup struct {
@@ -211,4 +211,22 @@ func NewMap(tmxpath string) (*Map, error) {
 	}
 
 	return m, nil
+}
+
+const (
+	GID_HORIZONTAL_FLIP = 0x80000000
+	GID_VERTICAL_FLIP   = 0x40000000
+	GID_DIAGONAL_FLIP   = 0x20000000
+)
+
+func (t *DataTile) IsHFlipped() bool {
+	return t.GID&GID_HORIZONTAL_FLIP != 0
+}
+
+func (t *DataTile) IsVFlipped() bool {
+	return t.GID&GID_VERTICAL_FLIP != 0
+}
+
+func (t *DataTile) IsDFlipped() bool {
+	return t.GID&GID_DIAGONAL_FLIP != 0
 }
