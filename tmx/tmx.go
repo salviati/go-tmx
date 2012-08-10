@@ -103,6 +103,7 @@ type Data struct {
 	Encoding    string `xml:"encoding,attr"`
 	Compression string `xml:"compression,attr"`
 	RawData     []byte `xml:",innerxml"`
+	DataTiles   []DataTile `xml:"tile"` // Only used when layer encoding is xml
 }
 
 type ObjectGroup struct {
@@ -178,6 +179,7 @@ func (d *Data) decodeCSV() (data []uint32, err error) {
 	rawDataClean := strings.Map(cleaner, string(d.RawData))
 
 	str := strings.Split(string(rawDataClean), ",")
+	
 	decoded := make([]uint32, len(str))
 	log.Println("l",len(str))
 	for i, s := range str {
@@ -186,14 +188,60 @@ func (d *Data) decodeCSV() (data []uint32, err error) {
 		if err != nil {
 			return
 		}
-		decoded[i] = uint32(d)
+		gid := uint32(d)
+		decoded[i] = gid
 	}
 	return decoded, err
 }
 
-func(m *Map) decodeLayerCSV(l *Layer) (err error) {
-	l.DecodedTiles, err = l.Data.decodeCSV()
-	return
+func (m *Map) decodeLayerXML(l *Layer) (err error) {
+	log.Println(len(l.Data.DataTiles))
+	if len(l.Data.DataTiles) != m.Width*m.Height {
+		return InvalidDecodedDataLen
+	}
+
+	l.DecodedTiles = make([]uint32, len(l.Data.DataTiles))
+
+	for i, dataTile := range l.Data.DataTiles {
+		l.DecodedTiles[i] = m.id(dataTile.GID)
+	}
+	
+	return nil
+}
+
+func(m *Map) decodeLayerCSV(l *Layer) error {
+	gids, err := l.Data.decodeCSV()
+	if err != nil {
+		return err
+	}
+	
+	if len(gids) != m.Width*m.Height {
+		return InvalidDecodedDataLen
+	}
+
+	l.DecodedTiles = make([]uint32, len(gids))
+	
+	for i, gid := range gids {
+		l.DecodedTiles[i] = m.id(gid)
+	}
+
+	return nil
+}
+
+func (m *Map) id(gid uint32) (uint32) {
+	gidBare := gid &^ GID_FLIP
+	
+	if gidBare == 0 { // empty tile
+		return 0
+	}
+
+	for i := len(m.Tilesets) - 1; i >= 0; i-- {
+		if m.Tilesets[i].FirstGID <= gidBare {
+			return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP)
+		}
+	}
+
+	panic("tmx: invalid GID")
 }
 
 func (m *Map) decodeLayerBase64(l *Layer) error {
@@ -208,23 +256,6 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 
 	l.DecodedTiles = make([]uint32, m.Width*m.Height)
 
-	id := func(gid uint32) (uint32, error) {
-		gidBare := gid &^ GID_FLIP
-		
-		if gidBare == 0 { // empty tile
-			return 0, nil
-		}
-		
-		gidBare++ // BUG(utkan): Undocumented strangeness in TMX format?
-
-		for i := len(m.Tilesets) - 1; i >= 0; i-- {
-			if m.Tilesets[i].FirstGID <= gidBare {
-				return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP), nil
-			}
-		}
-
-		return 0, InvalidGID
-	}
 
 	j := 0
 	for y := 0; y < m.Height; y++ {
@@ -235,10 +266,7 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 				uint32(dataBytes[j+3])<<24
 			j += 4
 
-			l.DecodedTiles[y*m.Width+x], err = id(gid)
-			if err != nil {
-				return err
-			}
+			l.DecodedTiles[y*m.Width+x] = m.id(gid)
 		}
 	}
 
@@ -251,6 +279,8 @@ func (m *Map) decodeLayer(l *Layer) error {
 			return m.decodeLayerCSV(l)
 		case "base64":
 			return m.decodeLayerBase64(l)
+		case "": // XML "encoding"
+			return m.decodeLayerXML(l)
 	}
 	return UnknownEncoding
 }
@@ -267,6 +297,10 @@ func (m *Map) decodeLayers() error {
 type Point struct {
 	X int
 	Y int
+}
+
+type DataTile struct {
+	GID uint32 `xml:"gid,attr"`
 }
 
 func (p *Polygon) Decode() ([]Point, error) {
