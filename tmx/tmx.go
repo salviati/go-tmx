@@ -36,6 +36,20 @@ import (
 	"os"
 )
 
+const (
+	GID_HORIZONTAL_FLIP = 0x80000000
+	GID_VERTICAL_FLIP   = 0x40000000
+	GID_DIAGONAL_FLIP   = 0x20000000
+	GID_FLIP            = GID_HORIZONTAL_FLIP | GID_VERTICAL_FLIP | GID_DIAGONAL_FLIP
+)
+
+var (
+	UnknownEncoding       = errors.New("tmx: invalid encoding scheme")
+	UnknownCompression    = errors.New("tmx: invalid compression method")
+	InvalidDecodedDataLen = errors.New("tmx: invalid decoded data length")
+	InvalidGID            = errors.New("tmx: invalid GID")
+)
+
 type Map struct {
 	Version      string        `xml:"title,attr"`
 	Orientation  string        `xml:"orientation,attr"`
@@ -50,7 +64,7 @@ type Map struct {
 }
 
 type Tileset struct {
-	FirstGID   int        `xml:"firstgid,attr"`
+	FirstGID   uint32        `xml:"firstgid,attr"`
 	Source     string     `xml:"source,attr"`
 	Name       string     `xml:"name,attr"`
 	TileWidth  int        `xml:"tilewidth,attr"`
@@ -75,11 +89,12 @@ type Tile struct {
 }
 
 type Layer struct {
-	Name       string     `xml:"name,attr"`
-	Opacity    float32    `xml:"opacity,attr"`
-	Visible    bool       `xml:"visible,attr"`
-	Properties Properties `xml:"properties"`
-	Data       Data       `xml:"data"`
+	Name         string     `xml:"name,attr"`
+	Opacity      float32    `xml:"opacity,attr"`
+	Visible      bool       `xml:"visible,attr"`
+	Properties   Properties `xml:"properties"`
+	Data         Data       `xml:"data"`
+	DecodedTiles []uint32 // This is probably the one you'd like to use, not data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
 }
 
 type Data struct {
@@ -90,7 +105,7 @@ type Data struct {
 }
 
 type DataTile struct {
-	GID uint `xml:"gid,attr"`
+	GID uint32 `xml:"gid,attr"`
 }
 
 type ObjectGroup struct {
@@ -126,17 +141,12 @@ type Properties struct {
 	Value string `xml:"value,attr"`
 }
 
-var (
-	UnknownEncoding    = errors.New("tmx: invalid encoding scheme")
-	UnknownCompression = errors.New("tmx: invalid compression method")
-)
-
 type csvReader struct {
 	r *csv.Reader
 }
 
 func (r *csvReader) Read([]byte) (int, error) {
-	panic("not implemented")
+	panic("not implemented") // BUG(utkan); Handle CSV
 }
 
 func newCSVReader(r io.Reader) *csvReader {
@@ -176,6 +186,54 @@ func (d *Data) Decode() (data []byte, err error) {
 	return ioutil.ReadAll(comr)
 }
 
+func (m *Map) decodeLayer(l *Layer) error {
+	dataBytes, err := l.Data.Decode()
+	if err != nil {
+		return err
+	}
+	if len(dataBytes)%4 != 0 {
+		return InvalidDecodedDataLen
+	}
+	l.DecodedTiles = make([]uint32, m.Width*m.Height)
+	j := 0
+
+	id := func(gid uint32) (uint32, error) {
+		gidBare := gid &^ GID_FLIP
+
+		for i := len(m.Tilesets); i >= 0; i++ {
+			if m.Tilesets[i].FirstGID <= gidBare {
+				return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP), nil
+			}
+		}
+		return 0, InvalidGID
+	}
+
+	for y := 0; y < m.Height; y++ {
+		for x := 0; x < m.Width; x++ {
+			gid := uint32(dataBytes[j]) +
+				uint32(dataBytes[j+1])<<8 +
+				uint32(dataBytes[j+2])<<16 +
+				uint32(dataBytes[j+3])<<24
+			j += 4
+
+			l.DecodedTiles[y*m.Width+x], err = id(gid)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (m *Map) decodeLayers() error {
+	for _, l := range m.Layers {
+		if err := m.decodeLayer(&l); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type Point struct {
 	X int
 	Y int
@@ -189,7 +247,7 @@ func (p *PolyLine) Decode() ([]Point, error) {
 }
 
 func decodePoints(s string) ([]Point, error) {
-	panic("not implemented")
+	panic("not implemented") // BUG(utkan); Handle points
 	return []Point{}, nil
 }
 
@@ -210,14 +268,8 @@ func NewMap(tmxpath string) (*Map, error) {
 		return nil, err
 	}
 
-	return m, nil
+	return m, m.decodeLayers()
 }
-
-const (
-	GID_HORIZONTAL_FLIP = 0x80000000
-	GID_VERTICAL_FLIP   = 0x40000000
-	GID_DIAGONAL_FLIP   = 0x20000000
-)
 
 func (t *DataTile) IsHFlipped() bool {
 	return t.GID&GID_HORIZONTAL_FLIP != 0
