@@ -151,7 +151,8 @@ func newCSVReader(r io.Reader) *csvReader {
 }
 
 func (d *Data) decode() (data []byte, err error) {
-	r := bytes.NewReader(d.RawData)
+	rawData := bytes.TrimSpace(d.RawData)
+	r := bytes.NewReader(rawData)
 
 	var encr io.Reader
 	switch d.Encoding {
@@ -176,8 +177,12 @@ func (d *Data) decode() (data []byte, err error) {
 		if err != nil {
 			return
 		}
+	case "":
+		comr = encr
 	default:
 		err = UnknownCompression
+		panic("unknown")
+		return
 	}
 
 	return ioutil.ReadAll(comr)
@@ -188,6 +193,7 @@ func (m *Map) decodeLayer(l *Layer) error {
 	if err != nil {
 		return err
 	}
+
 	if len(dataBytes) != m.Width*m.Height*4 {
 		return InvalidDecodedDataLen
 	}
@@ -196,12 +202,17 @@ func (m *Map) decodeLayer(l *Layer) error {
 
 	id := func(gid uint32) (uint32, error) {
 		gidBare := gid &^ GID_FLIP
+		
+		if gidBare == 0 { // empty tile
+			return 0, nil
+		}
 
-		for i := len(m.Tilesets) - 1; i >= 0; i++ {
+		for i := len(m.Tilesets) - 1; i >= 0; i-- {
 			if m.Tilesets[i].FirstGID <= gidBare {
 				return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP), nil
 			}
 		}
+
 		return 0, InvalidGID
 	}
 
@@ -225,8 +236,8 @@ func (m *Map) decodeLayer(l *Layer) error {
 }
 
 func (m *Map) decodeLayers() error {
-	for _, l := range m.Layers {
-		if err := m.decodeLayer(&l); err != nil {
+	for i:=0; i<len(m.Layers); i++ {
+		if err := m.decodeLayer(&m.Layers[i]); err != nil {
 			return err
 		}
 	}
