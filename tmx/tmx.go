@@ -35,6 +35,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"log"
 )
 
 const (
@@ -139,26 +140,11 @@ type Properties struct {
 	Value string `xml:"value,attr"`
 }
 
-func (d *Data) decode() (data []byte, err error) {
+func (d *Data) decodeBase64() (data []byte, err error) {
 	rawData := bytes.TrimSpace(d.RawData)
 	r := bytes.NewReader(rawData)
 
-	var encr io.Reader
-	switch d.Encoding {
-	case "base64":
-		encr = base64.NewDecoder(base64.StdEncoding, r)
-	case "csv":
-		str := strings.Split(string(rawData), ",")
-		decoded := make([]byte, len(str))
-		for i, s := range str {
-			d, _ := strconv.ParseUint(s, 10, 8)
-			decoded[i] = uint8(d)
-		}
-		encr = bytes.NewReader(decoded)
-	default:
-		err = UnknownEncoding
-		return
-	}
+	encr := base64.NewDecoder(base64.StdEncoding, r)
 
 	var comr io.Reader
 	switch d.Compression {
@@ -176,15 +162,42 @@ func (d *Data) decode() (data []byte, err error) {
 		comr = encr
 	default:
 		err = UnknownCompression
-		panic("unknown")
 		return
 	}
 
 	return ioutil.ReadAll(comr)
 }
 
-func (m *Map) decodeLayer(l *Layer) error {
-	dataBytes, err := l.Data.decode()
+func (d *Data) decodeCSV() (data []uint32, err error) {
+	cleaner := func(r rune) rune {
+		if (r >= '0' && r<= '9') || r == ',' {
+			return r
+		}
+		return -1
+	}
+	rawDataClean := strings.Map(cleaner, string(d.RawData))
+
+	str := strings.Split(string(rawDataClean), ",")
+	decoded := make([]uint32, len(str))
+	log.Println("l",len(str))
+	for i, s := range str {
+		var d uint64
+		d, err = strconv.ParseUint(s, 10, 32)
+		if err != nil {
+			return
+		}
+		decoded[i] = uint32(d)
+	}
+	return decoded, err
+}
+
+func(m *Map) decodeLayerCSV(l *Layer) (err error) {
+	l.DecodedTiles, err = l.Data.decodeCSV()
+	return
+}
+
+func (m *Map) decodeLayerBase64(l *Layer) error {
+	dataBytes, err := l.Data.decodeBase64()
 	if err != nil {
 		return err
 	}
@@ -201,6 +214,8 @@ func (m *Map) decodeLayer(l *Layer) error {
 		if gidBare == 0 { // empty tile
 			return 0, nil
 		}
+		
+		gidBare++ // BUG(utkan): Undocumented strangeness in TMX format?
 
 		for i := len(m.Tilesets) - 1; i >= 0; i-- {
 			if m.Tilesets[i].FirstGID <= gidBare {
@@ -228,6 +243,16 @@ func (m *Map) decodeLayer(l *Layer) error {
 	}
 
 	return nil
+}
+
+func (m *Map) decodeLayer(l *Layer) error {
+	switch l.Data.Encoding {
+		case "csv":
+			return m.decodeLayerCSV(l)
+		case "base64":
+			return m.decodeLayerBase64(l)
+	}
+	return UnknownEncoding
 }
 
 func (m *Map) decodeLayers() error {
