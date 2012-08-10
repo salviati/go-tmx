@@ -148,7 +148,7 @@ func newCSVReader(r io.Reader) *csvReader {
 	return &csvReader{csv.NewReader(r)}
 }
 
-func (d *Data) Decode() (data []byte, err error) {
+func (d *Data) decode() (data []byte, err error) {
 	r := bytes.NewReader(d.RawData)
 
 	var encr io.Reader
@@ -182,7 +182,7 @@ func (d *Data) Decode() (data []byte, err error) {
 }
 
 func (m *Map) decodeLayer(l *Layer) error {
-	dataBytes, err := l.Data.Decode()
+	dataBytes, err := l.Data.decode()
 	if err != nil {
 		return err
 	}
