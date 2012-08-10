@@ -64,7 +64,7 @@ type Map struct {
 }
 
 type Tileset struct {
-	FirstGID   uint32        `xml:"firstgid,attr"`
+	FirstGID   uint32     `xml:"firstgid,attr"`
 	Source     string     `xml:"source,attr"`
 	Name       string     `xml:"name,attr"`
 	TileWidth  int        `xml:"tilewidth,attr"`
@@ -94,13 +94,13 @@ type Layer struct {
 	Visible      bool       `xml:"visible,attr"`
 	Properties   Properties `xml:"properties"`
 	Data         Data       `xml:"data"`
-	DecodedTiles []uint32 // This is probably the one you'd like to use, not data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
+	DecodedTiles []uint32   // This is probably the one you'd like to use, not data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
 }
 
 type Data struct {
-	Encoding    string   `xml:"encoding,attr"`
-	Compression string   `xml:"compression,attr"`
-	RawData     []byte   `xml:",innerxml"`
+	Encoding    string `xml:"encoding,attr"`
+	Compression string `xml:"compression,attr"`
+	RawData     []byte `xml:",innerxml"`
 }
 
 type ObjectGroup struct {
@@ -186,16 +186,16 @@ func (m *Map) decodeLayer(l *Layer) error {
 	if err != nil {
 		return err
 	}
-	if len(dataBytes)%4 != 0 {
+	if len(dataBytes) != m.Width*m.Height*4 {
 		return InvalidDecodedDataLen
 	}
+
 	l.DecodedTiles = make([]uint32, m.Width*m.Height)
-	j := 0
 
 	id := func(gid uint32) (uint32, error) {
 		gidBare := gid &^ GID_FLIP
 
-		for i := len(m.Tilesets); i >= 0; i++ {
+		for i := len(m.Tilesets) - 1; i >= 0; i++ {
 			if m.Tilesets[i].FirstGID <= gidBare {
 				return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP), nil
 			}
@@ -203,6 +203,7 @@ func (m *Map) decodeLayer(l *Layer) error {
 		return 0, InvalidGID
 	}
 
+	j := 0
 	for y := 0; y < m.Height; y++ {
 		for x := 0; x < m.Width; x++ {
 			gid := uint32(dataBytes[j]) +
@@ -217,6 +218,7 @@ func (m *Map) decodeLayer(l *Layer) error {
 			}
 		}
 	}
+
 	return nil
 }
 
