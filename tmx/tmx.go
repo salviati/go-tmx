@@ -100,12 +100,7 @@ type Layer struct {
 type Data struct {
 	Encoding    string   `xml:"encoding,attr"`
 	Compression string   `xml:"compression,attr"`
-	DataTile    DataTile `xml:"tile"`
 	RawData     []byte   `xml:",innerxml"`
-}
-
-type DataTile struct {
-	GID uint32 `xml:"gid,attr"`
 }
 
 type ObjectGroup struct {
@@ -269,16 +264,4 @@ func NewMap(tmxpath string) (*Map, error) {
 	}
 
 	return m, m.decodeLayers()
-}
-
-func (t *DataTile) IsHFlipped() bool {
-	return t.GID&GID_HORIZONTAL_FLIP != 0
-}
-
-func (t *DataTile) IsVFlipped() bool {
-	return t.GID&GID_VERTICAL_FLIP != 0
-}
-
-func (t *DataTile) IsDFlipped() bool {
-	return t.GID&GID_DIAGONAL_FLIP != 0
 }
