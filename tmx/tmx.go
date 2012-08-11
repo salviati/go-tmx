@@ -32,7 +32,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -182,7 +181,6 @@ func (d *Data) decodeCSV() (data []uint32, err error) {
 	str := strings.Split(string(rawDataClean), ",")
 
 	decoded := make([]uint32, len(str))
-	log.Println("l", len(str))
 	for i, s := range str {
 		var d uint64
 		d, err = strconv.ParseUint(s, 10, 32)
@@ -196,7 +194,6 @@ func (d *Data) decodeCSV() (data []uint32, err error) {
 }
 
 func (m *Map) decodeLayerXML(l *Layer) (err error) {
-	log.Println(len(l.Data.DataTiles))
 	if len(l.Data.DataTiles) != m.Width*m.Height {
 		return InvalidDecodedDataLen
 	}
