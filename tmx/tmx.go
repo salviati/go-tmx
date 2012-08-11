@@ -38,11 +38,11 @@ import (
 )
 
 const (
-	GID_HORIZONTAL_FLIP = 0x80000000
-	GID_VERTICAL_FLIP   = 0x40000000
-	GID_DIAGONAL_FLIP   = 0x20000000
-	GID_FLIP            = GID_HORIZONTAL_FLIP | GID_VERTICAL_FLIP | GID_DIAGONAL_FLIP
-	NIL_TILE            = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
+	GIDHorizontalFlip = 0x80000000
+	GIDVerticalFlip   = 0x40000000
+	GIDDiagonalFlip   = 0x20000000
+	GIDFlip            = GIDHorizontalFlip | GIDVerticalFlip | GIDDiagonalFlip
+	NilTile            = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
 )
 
 var (
@@ -96,7 +96,7 @@ type Layer struct {
 	Visible      bool       `xml:"visible,attr"`
 	Properties   Properties `xml:"properties"`
 	Data         Data       `xml:"data"`
-	DecodedTiles []uint32   // This is probably the one you'd like to use, not Data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
+	DecodedTiles []uint32   // This is probably the one you'd like to use, not Data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GIDFlip (upper 3 bits indicate H/V/D flips).
 }
 
 type Data struct {
@@ -227,15 +227,15 @@ func (m *Map) decodeLayerCSV(l *Layer) error {
 }
 
 func (m *Map) id(gid uint32) uint32 {
-	gidBare := gid &^ GID_FLIP
+	gidBare := gid &^ GIDFlip
 
 	if gidBare == 0 { // empty tile
-		return NIL_TILE
+		return NilTile
 	}
 
 	for i := len(m.Tilesets) - 1; i >= 0; i-- {
 		if m.Tilesets[i].FirstGID <= gidBare {
-			return (gidBare - m.Tilesets[i].FirstGID) | (gid & GID_FLIP)
+			return (gidBare - m.Tilesets[i].FirstGID) | (gid & GIDFlip)
 		}
 	}
 
