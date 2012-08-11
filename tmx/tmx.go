@@ -28,14 +28,14 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"encoding/base64"
-	"strings"
-	"strconv"
 	"encoding/xml"
 	"errors"
 	"io"
 	"io/ioutil"
-	"os"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 	GID_VERTICAL_FLIP   = 0x40000000
 	GID_DIAGONAL_FLIP   = 0x20000000
 	GID_FLIP            = GID_HORIZONTAL_FLIP | GID_VERTICAL_FLIP | GID_DIAGONAL_FLIP
-	NIL_TILE = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
+	NIL_TILE            = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
 )
 
 var (
@@ -101,9 +101,9 @@ type Layer struct {
 }
 
 type Data struct {
-	Encoding    string `xml:"encoding,attr"`
-	Compression string `xml:"compression,attr"`
-	RawData     []byte `xml:",innerxml"`
+	Encoding    string     `xml:"encoding,attr"`
+	Compression string     `xml:"compression,attr"`
+	RawData     []byte     `xml:",innerxml"`
 	DataTiles   []DataTile `xml:"tile"` // Only used when layer encoding is xml
 }
 
@@ -172,7 +172,7 @@ func (d *Data) decodeBase64() (data []byte, err error) {
 
 func (d *Data) decodeCSV() (data []uint32, err error) {
 	cleaner := func(r rune) rune {
-		if (r >= '0' && r<= '9') || r == ',' {
+		if (r >= '0' && r <= '9') || r == ',' {
 			return r
 		}
 		return -1
@@ -180,9 +180,9 @@ func (d *Data) decodeCSV() (data []uint32, err error) {
 	rawDataClean := strings.Map(cleaner, string(d.RawData))
 
 	str := strings.Split(string(rawDataClean), ",")
-	
+
 	decoded := make([]uint32, len(str))
-	log.Println("l",len(str))
+	log.Println("l", len(str))
 	for i, s := range str {
 		var d uint64
 		d, err = strconv.ParseUint(s, 10, 32)
@@ -206,22 +206,22 @@ func (m *Map) decodeLayerXML(l *Layer) (err error) {
 	for i, dataTile := range l.Data.DataTiles {
 		l.DecodedTiles[i] = m.id(dataTile.GID)
 	}
-	
+
 	return nil
 }
 
-func(m *Map) decodeLayerCSV(l *Layer) error {
+func (m *Map) decodeLayerCSV(l *Layer) error {
 	gids, err := l.Data.decodeCSV()
 	if err != nil {
 		return err
 	}
-	
+
 	if len(gids) != m.Width*m.Height {
 		return InvalidDecodedDataLen
 	}
 
 	l.DecodedTiles = make([]uint32, len(gids))
-	
+
 	for i, gid := range gids {
 		l.DecodedTiles[i] = m.id(gid)
 	}
@@ -229,9 +229,9 @@ func(m *Map) decodeLayerCSV(l *Layer) error {
 	return nil
 }
 
-func (m *Map) id(gid uint32) (uint32) {
+func (m *Map) id(gid uint32) uint32 {
 	gidBare := gid &^ GID_FLIP
-	
+
 	if gidBare == 0 { // empty tile
 		return NIL_TILE
 	}
@@ -257,7 +257,6 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 
 	l.DecodedTiles = make([]uint32, m.Width*m.Height)
 
-
 	j := 0
 	for y := 0; y < m.Height; y++ {
 		for x := 0; x < m.Width; x++ {
@@ -276,18 +275,18 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 
 func (m *Map) decodeLayer(l *Layer) error {
 	switch l.Data.Encoding {
-		case "csv":
-			return m.decodeLayerCSV(l)
-		case "base64":
-			return m.decodeLayerBase64(l)
-		case "": // XML "encoding"
-			return m.decodeLayerXML(l)
+	case "csv":
+		return m.decodeLayerCSV(l)
+	case "base64":
+		return m.decodeLayerBase64(l)
+	case "": // XML "encoding"
+		return m.decodeLayerXML(l)
 	}
 	return UnknownEncoding
 }
 
 func (m *Map) decodeLayers() error {
-	for i:=0; i<len(m.Layers); i++ {
+	for i := 0; i < len(m.Layers); i++ {
 		if err := m.decodeLayer(&m.Layers[i]); err != nil {
 			return err
 		}
