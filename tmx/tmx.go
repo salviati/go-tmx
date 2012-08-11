@@ -96,7 +96,7 @@ type Layer struct {
 	Visible      bool       `xml:"visible,attr"`
 	Properties   Properties `xml:"properties"`
 	Data         Data       `xml:"data"`
-	DecodedTiles []uint32   // This is probably the one you'd like to use, not data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
+	DecodedTiles []uint32   // This is probably the one you'd like to use, not Data. Tile index at (x,y) is l.DecodedTiles[y*map.Width+x] &^ GID_FLIP (upper 3 bits indicate H/V/D flips).
 }
 
 type Data struct {
@@ -308,7 +308,7 @@ func (p *PolyLine) Decode() ([]Point, error) {
 }
 
 func decodePoints(s string) ([]Point, error) {
-	panic("not implemented") // BUG(utkan); Handle points
+	panic("tmx: not implemented") // BUG(utkan): Handle points
 	return []Point{}, nil
 }
 
