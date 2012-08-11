@@ -43,6 +43,7 @@ const (
 	GID_VERTICAL_FLIP   = 0x40000000
 	GID_DIAGONAL_FLIP   = 0x20000000
 	GID_FLIP            = GID_HORIZONTAL_FLIP | GID_VERTICAL_FLIP | GID_DIAGONAL_FLIP
+	NIL_TILE = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
 )
 
 var (
@@ -232,7 +233,7 @@ func (m *Map) id(gid uint32) (uint32) {
 	gidBare := gid &^ GID_FLIP
 	
 	if gidBare == 0 { // empty tile
-		return 0
+		return NIL_TILE
 	}
 
 	for i := len(m.Tilesets) - 1; i >= 0; i-- {
