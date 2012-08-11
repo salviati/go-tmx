@@ -41,8 +41,9 @@ const (
 	GIDHorizontalFlip = 0x80000000
 	GIDVerticalFlip   = 0x40000000
 	GIDDiagonalFlip   = 0x20000000
-	GIDFlip            = GIDHorizontalFlip | GIDVerticalFlip | GIDDiagonalFlip
-	NilTile            = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
+	GIDFlip           = GIDHorizontalFlip | GIDVerticalFlip | GIDDiagonalFlip
+	GIDMask           = 0x0fffffff
+	NilTile           = 0xffffffff // Beware of the nil tile! Can crash your game if not handled properly.
 )
 
 var (
@@ -137,6 +138,10 @@ type PolyLine struct {
 }
 
 type Properties struct {
+	Property []Property `xml:"property"`
+}
+
+type Property struct {
 	Name  string `xml:"name,attr"`
 	Value string `xml:"value,attr"`
 }
