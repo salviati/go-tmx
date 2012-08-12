@@ -138,12 +138,22 @@ type PolyLine struct {
 }
 
 type Properties struct {
-	Property []Property `xml:"property"`
+	Properties []Property `xml:"property"`
 }
 
 type Property struct {
 	Name  string `xml:"name,attr"`
 	Value string `xml:"value,attr"`
+}
+
+func (p *Properties) Get(name string) (value []string) {
+	value = make([]string, 0)
+	for _, prop := range p.Properties {
+		if prop.Name == name {
+			value = append(value, prop.Value)
+		}
+	}
+	return
 }
 
 func (d *Data) decodeBase64() (data []byte, err error) {
