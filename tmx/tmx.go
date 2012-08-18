@@ -104,7 +104,7 @@ type Layer struct {
 	Visible      bool       `xml:"visible,attr"`
 	Properties   Properties `xml:"properties"`
 	Data         Data       `xml:"data"`
-	GIDs         []GID      // This or DecodedTiles is probably the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using map.DecodeGID(l.GIDs[y*map.Width+x]).
+	GIDs         []GID      // This or DecodedTiles is probably the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using map.DecodeGID(l.GIDs[y*map.Width+x]) or l.DecodedTiles[y*map.Width+x].
 	DecodedTiles []*DecodedTile
 	Tileset      *Tileset // This is only set when the layer uses a single tileset and NilLayer is false.
 	Empty        bool     // Set when all entries of the layer are NilTile
