@@ -104,10 +104,10 @@ type Layer struct {
 	Visible      bool       `xml:"visible,attr"`
 	Properties   Properties `xml:"properties"`
 	Data         Data       `xml:"data"`
-	GIDs         []GID      // This or DecodedTiles is probably the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using map.DecodeGID(l.GIDs[y*map.Width+x]) or l.DecodedTiles[y*map.Width+x].
-	DecodedTiles []*DecodedTile
-	Tileset      *Tileset // This is only set when the layer uses a single tileset and NilLayer is false.
-	Empty        bool     // Set when all entries of the layer are NilTile
+	gids         []GID
+	DecodedTiles []*DecodedTile // This is the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using l.DecodedTiles[y*map.Width+x].
+	Tileset      *Tileset       // This is only set when the layer uses a single tileset and NilLayer is false.
+	Empty        bool           // Set when all entries of the layer are NilTile
 }
 
 type Data struct {
@@ -223,9 +223,9 @@ func (m *Map) decodeLayerXML(l *Layer) (err error) {
 		return InvalidDecodedDataLen
 	}
 
-	l.GIDs = make([]GID, len(l.Data.DataTiles))
-	for i := 0; i < len(l.GIDs); i++ {
-		l.GIDs[i] = l.Data.DataTiles[i].GID
+	l.gids = make([]GID, len(l.Data.DataTiles))
+	for i := 0; i < len(l.gids); i++ {
+		l.gids[i] = l.Data.DataTiles[i].GID
 	}
 
 	return nil
@@ -241,7 +241,7 @@ func (m *Map) decodeLayerCSV(l *Layer) error {
 		return InvalidDecodedDataLen
 	}
 
-	l.GIDs = gids
+	l.gids = gids
 
 	return nil
 }
@@ -256,7 +256,7 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 		return InvalidDecodedDataLen
 	}
 
-	l.GIDs = make([]GID, m.Width*m.Height)
+	l.gids = make([]GID, m.Width*m.Height)
 
 	j := 0
 	for y := 0; y < m.Height; y++ {
@@ -267,7 +267,7 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 				GID(dataBytes[j+3])<<24
 			j += 4
 
-			l.GIDs[y*m.Width+x] = gid
+			l.gids[y*m.Width+x] = gid
 		}
 	}
 
@@ -286,11 +286,21 @@ func (m *Map) decodeLayer(l *Layer) error {
 	return UnknownEncoding
 }
 
-func (m *Map) decodeLayers() error {
+func (m *Map) decodeLayers() (err error) {
 	for i := 0; i < len(m.Layers); i++ {
-		if err := m.decodeLayer(&m.Layers[i]); err != nil {
+		l := &m.Layers[i]
+		if err = m.decodeLayer(l); err != nil {
 			return err
 		}
+
+		l.DecodedTiles = make([]*DecodedTile, len(l.gids))
+		for j := 0; j < len(l.DecodedTiles); j++ {
+			l.DecodedTiles[j], err = m.DecodeGID(l.gids[j])
+			if err != nil {
+				return err
+			}
+		}
+		l.gids = []GID{}
 	}
 	return nil
 }
@@ -364,17 +374,6 @@ func Read(r io.Reader) (*Map, error) {
 	err := m.decodeLayers()
 	if err != nil {
 		return nil, err
-	}
-
-	for i := 0; i < len(m.Layers); i++ {
-		l := &m.Layers[i]
-		l.DecodedTiles = make([]*DecodedTile, len(l.GIDs))
-		for j := 0; j < len(l.DecodedTiles); j++ {
-			l.DecodedTiles[j], err = m.DecodeGID(l.GIDs[j])
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	for i := 0; i < len(m.Layers); i++ {

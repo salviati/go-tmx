@@ -39,7 +39,7 @@ type GBA struct {
 }
 
 func (g *GBA) MaxTiles(m *tmx.Map, l *tmx.Layer) int {
-	// Save one for nil-tile
+	// Save one for nil-tile. FIXME(utkan): Not everone will need an extra tile.
 	if g.isAffine(l) {
 		return 255
 	}
@@ -83,7 +83,7 @@ func (g *GBA) nilTile(m *tmx.Map, l *tmx.Layer) interface{} {
 	return nilTile
 }
 
-func (g *GBA) ScreenblockEntry(m *tmx.Map, l *tmx.Layer, gid tmx.GID) (interface{}, error) {
+func (g *GBA) ScreenblockEntry(m *tmx.Map, l *tmx.Layer, tile *tmx.DecodedTile) (interface{}, error) {
 	affine := g.isAffine(l)
 
 	rval := func(v uint16) interface{} {
@@ -91,11 +91,6 @@ func (g *GBA) ScreenblockEntry(m *tmx.Map, l *tmx.Layer, gid tmx.GID) (interface
 			return uint8(v)
 		}
 		return uint16(v)
-	}
-
-	tile, err := m.DecodeGID(gid)
-	if err != nil {
-		return rval(0), err
 	}
 
 	if tile.IsNil() {

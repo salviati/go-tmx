@@ -52,8 +52,8 @@ const (
 )
 
 type Console interface {
-	MaxTiles(m *tmx.Map, l *tmx.Layer) int                                       // Maximum number of allowed tiles
-	ScreenblockEntry(m *tmx.Map, l *tmx.Layer, gid tmx.GID) (interface{}, error) // Should convert a GID to machine-specific screenblock entry.
+	MaxTiles(m *tmx.Map, l *tmx.Layer) int                                                 // Maximum number of allowed tiles
+	ScreenblockEntry(m *tmx.Map, l *tmx.Layer, tile *tmx.DecodedTile) (interface{}, error) // Should convert a GID to machine-specific screenblock entry.
 	ByteOrder() binary.ByteOrder
 }
 
@@ -104,7 +104,7 @@ func Do(c Console, filename string) error {
 		i := 0
 		for y := 0; y < m.Height; y++ {
 			for x := 0; x < m.Width; x++ {
-				tile, err := c.ScreenblockEntry(m, l, l.GIDs[i])
+				tile, err := c.ScreenblockEntry(m, l, l.DecodedTiles[i])
 				if err != nil {
 					return err
 				}
@@ -124,7 +124,7 @@ func Do(c Console, filename string) error {
 		var d uint8
 		for y := 0; y < m.Height; y++ {
 			for x := 0; x < m.Width; x++ {
-				if l.GIDs[i] != 0 {
+				if l.DecodedTiles[i].Nil == false {
 					d |= 1 << i
 				}
 				i++
