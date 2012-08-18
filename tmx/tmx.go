@@ -99,12 +99,11 @@ type Tile struct {
 }
 
 type Layer struct {
-	Name         string     `xml:"name,attr"`
-	Opacity      float32    `xml:"opacity,attr"`
-	Visible      bool       `xml:"visible,attr"`
-	Properties   Properties `xml:"properties"`
-	Data         Data       `xml:"data"`
-	gids         []GID
+	Name         string         `xml:"name,attr"`
+	Opacity      float32        `xml:"opacity,attr"`
+	Visible      bool           `xml:"visible,attr"`
+	Properties   Properties     `xml:"properties"`
+	Data         Data           `xml:"data"`
 	DecodedTiles []*DecodedTile // This is the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using l.DecodedTiles[y*map.Width+x].
 	Tileset      *Tileset       // This is only set when the layer uses a single tileset and NilLayer is false.
 	Empty        bool           // Set when all entries of the layer are NilTile
@@ -205,58 +204,55 @@ func (d *Data) decodeCSV() (data []GID, err error) {
 
 	str := strings.Split(string(rawDataClean), ",")
 
-	decoded := make([]GID, len(str))
+	gids := make([]GID, len(str))
 	for i, s := range str {
 		var d uint64
 		d, err = strconv.ParseUint(s, 10, 32)
 		if err != nil {
 			return
 		}
-		gid := GID(d)
-		decoded[i] = gid
+		gids[i] = GID(d)
 	}
-	return decoded, err
+	return gids, err
 }
 
-func (m *Map) decodeLayerXML(l *Layer) (err error) {
+func (m *Map) decodeLayerXML(l *Layer) (gids []GID, err error) {
 	if len(l.Data.DataTiles) != m.Width*m.Height {
-		return InvalidDecodedDataLen
+		return []GID{}, InvalidDecodedDataLen
 	}
 
-	l.gids = make([]GID, len(l.Data.DataTiles))
-	for i := 0; i < len(l.gids); i++ {
-		l.gids[i] = l.Data.DataTiles[i].GID
+	gids = make([]GID, len(l.Data.DataTiles))
+	for i := 0; i < len(gids); i++ {
+		gids[i] = l.Data.DataTiles[i].GID
 	}
 
-	return nil
+	return gids, nil
 }
 
-func (m *Map) decodeLayerCSV(l *Layer) error {
+func (m *Map) decodeLayerCSV(l *Layer) ([]GID, error) {
 	gids, err := l.Data.decodeCSV()
 	if err != nil {
-		return err
+		return []GID{}, err
 	}
 
 	if len(gids) != m.Width*m.Height {
-		return InvalidDecodedDataLen
+		return []GID{}, InvalidDecodedDataLen
 	}
 
-	l.gids = gids
-
-	return nil
+	return gids, nil
 }
 
-func (m *Map) decodeLayerBase64(l *Layer) error {
+func (m *Map) decodeLayerBase64(l *Layer) ([]GID, error) {
 	dataBytes, err := l.Data.decodeBase64()
 	if err != nil {
-		return err
+		return []GID{}, err
 	}
 
 	if len(dataBytes) != m.Width*m.Height*4 {
-		return InvalidDecodedDataLen
+		return []GID{}, InvalidDecodedDataLen
 	}
 
-	l.gids = make([]GID, m.Width*m.Height)
+	gids := make([]GID, m.Width*m.Height)
 
 	j := 0
 	for y := 0; y < m.Height; y++ {
@@ -267,14 +263,14 @@ func (m *Map) decodeLayerBase64(l *Layer) error {
 				GID(dataBytes[j+3])<<24
 			j += 4
 
-			l.gids[y*m.Width+x] = gid
+			gids[y*m.Width+x] = gid
 		}
 	}
 
-	return nil
+	return gids, nil
 }
 
-func (m *Map) decodeLayer(l *Layer) error {
+func (m *Map) decodeLayer(l *Layer) ([]GID, error) {
 	switch l.Data.Encoding {
 	case "csv":
 		return m.decodeLayerCSV(l)
@@ -283,24 +279,24 @@ func (m *Map) decodeLayer(l *Layer) error {
 	case "": // XML "encoding"
 		return m.decodeLayerXML(l)
 	}
-	return UnknownEncoding
+	return []GID{}, UnknownEncoding
 }
 
 func (m *Map) decodeLayers() (err error) {
 	for i := 0; i < len(m.Layers); i++ {
 		l := &m.Layers[i]
-		if err = m.decodeLayer(l); err != nil {
+		var gids []GID
+		if gids, err = m.decodeLayer(l); err != nil {
 			return err
 		}
 
-		l.DecodedTiles = make([]*DecodedTile, len(l.gids))
+		l.DecodedTiles = make([]*DecodedTile, len(gids))
 		for j := 0; j < len(l.DecodedTiles); j++ {
-			l.DecodedTiles[j], err = m.DecodeGID(l.gids[j])
+			l.DecodedTiles[j], err = m.DecodeGID(gids[j])
 			if err != nil {
 				return err
 			}
 		}
-		l.gids = []GID{}
 	}
 	return nil
 }

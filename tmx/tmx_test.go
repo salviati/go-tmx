@@ -97,6 +97,9 @@ func TestRead(t *testing.T) {
 		m, err := Read(r)
 		chk(err)
 
-		chkLayerData(layer0Data, m.Layers[0].GIDs)
+		layer0GIDs, err := m.decodeLayer(&m.Layers[0])
+		chk(err)
+
+		chkLayerData(layer0Data, layer0GIDs)
 	}
 }
