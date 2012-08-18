@@ -414,7 +414,3 @@ type DecodedTile struct {
 	VerticalFlip   bool
 	Nil            bool
 }
-
-func (t *DecodedTile) IsNil() bool {
-	return t.Nil
-}

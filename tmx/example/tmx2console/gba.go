@@ -93,7 +93,7 @@ func (g *GBA) ScreenblockEntry(m *tmx.Map, l *tmx.Layer, tile *tmx.DecodedTile) 
 		return uint16(v)
 	}
 
-	if tile.IsNil() {
+	if tile.Nil {
 		return g.nilTile(m, l), nil
 	}
 
