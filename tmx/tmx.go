@@ -126,16 +126,17 @@ type ObjectGroup struct {
 }
 
 type Object struct {
-	Name      string     `xml:"name,attr"`
-	Type      string     `xml:"type,attr"`
-	X         int        `xml:"x,attr"`
-	Y         int        `xml:y",attr"`
-	Width     int        `xml:"widrg,attr"`
-	Height    int        `xml:"height,attr"`
-	GID       int        `xml:"gid,attr"`
-	Visible   bool       `xml:"visible,attr"`
-	Polygons  []Polygon  `xml:"polygon"`
-	PolyLines []PolyLine `xml:"polyline"`
+	Name       string     `xml:"name,attr"`
+	Type       string     `xml:"type,attr"`
+	X          int        `xml:"x,attr"`
+	Y          int        `xml:"y,attr"`
+	Width      int        `xml:"widrg,attr"`
+	Height     int        `xml:"height,attr"`
+	GID        int        `xml:"gid,attr"`
+	Visible    bool       `xml:"visible,attr"`
+	Polygons   []Polygon  `xml:"polygon"`
+	PolyLines  []PolyLine `xml:"polyline"`
+	Properties Properties `xml:"properties"`
 }
 
 type Polygon struct {
