@@ -130,7 +130,7 @@ type Object struct {
 	Type       string     `xml:"type,attr"`
 	X          int        `xml:"x,attr"`
 	Y          int        `xml:"y,attr"`
-	Width      int        `xml:"widrg,attr"`
+	Width      int        `xml:"width,attr"`
 	Height     int        `xml:"height,attr"`
 	GID        int        `xml:"gid,attr"`
 	Visible    bool       `xml:"visible,attr"`
