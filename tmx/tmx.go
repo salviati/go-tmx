@@ -399,6 +399,7 @@ func (m *Map) DecodeGID(gid GID) (*DecodedTile, error) {
 				Tileset:        &m.Tilesets[i],
 				HorizontalFlip: gid&GIDHorizontalFlip != 0,
 				VerticalFlip:   gid&GIDVerticalFlip != 0,
+				DiagonalFlip:   gid&GIDDiagonalFlip != 0,
 				Nil:            false,
 			}, nil
 		}
@@ -412,6 +413,7 @@ type DecodedTile struct {
 	Tileset        *Tileset
 	HorizontalFlip bool
 	VerticalFlip   bool
+	DiagonalFlip   bool
 	Nil            bool
 }
 
