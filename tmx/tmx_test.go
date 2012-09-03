@@ -103,3 +103,29 @@ func TestRead(t *testing.T) {
 		chkLayerData(layer0Data, layer0GIDs)
 	}
 }
+
+func TestProperties(t *testing.T) {
+	t.Log("Reading", "testdata/poly.tmx")
+
+	r, err := os.Open("testdata/poly.tmx")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	m, err := Read(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, group := range m.ObjectGroups {
+		for _, object := range group.Objects {
+			if object.Properties.Properties[0].Name != "foo" {
+				t.Error("No properties")
+			}
+			return
+		}
+	}
+		
+	t.Fatal("No property found")
+
+}
