@@ -119,7 +119,7 @@ func TestProperties(t *testing.T) {
 
 	for _, group := range m.ObjectGroups {
 		for _, object := range group.Objects {
-			if object.Properties.Properties[0].Name != "foo" {
+			if object.Properties[0].Name != "foo" {
 				t.Error("No properties")
 			}
 			return
