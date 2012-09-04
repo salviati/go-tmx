@@ -53,7 +53,7 @@ var (
 )
 
 var (
-	NilTile = &DecodedTile{Nil: false}
+	NilTile = &DecodedTile{Nil: true}
 )
 
 type GID uint32 // A tile ID. Could be used for GID or ID.
