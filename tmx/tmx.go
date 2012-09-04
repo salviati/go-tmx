@@ -319,7 +319,7 @@ func decodePoints(s string) (points []Point, err error) {
 			return []Point{}, err
 		}
 
-		points[i].Y, err = strconv.Atoi(coordStrings[0])
+		points[i].Y, err = strconv.Atoi(coordStrings[1])
 		if err != nil {
 			return []Point{}, err
 		}
