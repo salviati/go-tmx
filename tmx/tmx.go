@@ -67,7 +67,7 @@ type Map struct {
 	Height       int           `xml:"height,attr"`
 	TileWidth    int           `xml:"tilewidth,attr"`
 	TileHeight   int           `xml:"tileheight,attr"`
-	Properties   Properties    `xml:"properties"`
+	Properties   []Property    `xml:"properties>property"`
 	Tilesets     []Tileset     `xml:"tileset"`
 	Layers       []Layer       `xml:"layer"`
 	ObjectGroups []ObjectGroup `xml:"objectgroup"`
@@ -81,7 +81,7 @@ type Tileset struct {
 	TileHeight int        `xml:"tileheight,attr"`
 	Spacing    int        `xml:"spacing,attr"`
 	Margin     int        `xml:"margin,attr"`
-	Properties Properties `xml:"properties"`
+	Properties []Property `xml:"properties>property"`
 	Image      Image      `xml:"image"`
 	Tiles      []Tile     `xml:"tile"`
 }
@@ -102,7 +102,7 @@ type Layer struct {
 	Name         string         `xml:"name,attr"`
 	Opacity      float32        `xml:"opacity,attr"`
 	Visible      bool           `xml:"visible,attr"`
-	Properties   Properties     `xml:"properties"`
+	Properties   []Property     `xml:"properties>property"`
 	Data         Data           `xml:"data"`
 	DecodedTiles []*DecodedTile // This is the attiribute you'd like to use, not Data. Tile entry at (x,y) is obtained using l.DecodedTiles[y*map.Width+x].
 	Tileset      *Tileset       // This is only set when the layer uses a single tileset and NilLayer is false.
@@ -121,21 +121,22 @@ type ObjectGroup struct {
 	Color      string     `xml:"color,attr"`
 	Opacity    float32    `xml:"opacity,attr"`
 	Visible    bool       `xml:"visible,attr"`
-	Properties Properties `xml:"properties"`
+	Properties []Property `xml:"properties>property"`
 	Objects    []Object   `xml:"object"`
 }
 
 type Object struct {
-	Name      string     `xml:"name,attr"`
-	Type      string     `xml:"type,attr"`
-	X         int        `xml:"x,attr"`
-	Y         int        `xml:y",attr"`
-	Width     int        `xml:"width,attr"`
-	Height    int        `xml:"height,attr"`
-	GID       int        `xml:"gid,attr"`
-	Visible   bool       `xml:"visible,attr"`
-	Polygons  []Polygon  `xml:"polygon"`
-	PolyLines []PolyLine `xml:"polyline"`
+	Name       string     `xml:"name,attr"`
+	Type       string     `xml:"type,attr"`
+	X          int        `xml:"x,attr"`
+	Y          int        `xml:"y,attr"`
+	Width      int        `xml:"width,attr"`
+	Height     int        `xml:"height,attr"`
+	GID        int        `xml:"gid,attr"`
+	Visible    bool       `xml:"visible,attr"`
+	Polygons   []Polygon  `xml:"polygon"`
+	PolyLines  []PolyLine `xml:"polyline"`
+	Properties []Property `xml:"properties>property"`
 }
 
 type Polygon struct {
@@ -146,23 +147,9 @@ type PolyLine struct {
 	Points string `xml:"points,attr"`
 }
 
-type Properties struct {
-	Properties []Property `xml:"property"`
-}
-
 type Property struct {
 	Name  string `xml:"name,attr"`
 	Value string `xml:"value,attr"`
-}
-
-func (p *Properties) Get(name string) (value []string) {
-	value = make([]string, 0)
-	for _, prop := range p.Properties {
-		if prop.Name == name {
-			value = append(value, prop.Value)
-		}
-	}
-	return
 }
 
 func (d *Data) decodeBase64() (data []byte, err error) {
@@ -399,6 +386,7 @@ func (m *Map) DecodeGID(gid GID) (*DecodedTile, error) {
 				Tileset:        &m.Tilesets[i],
 				HorizontalFlip: gid&GIDHorizontalFlip != 0,
 				VerticalFlip:   gid&GIDVerticalFlip != 0,
+				DiagonalFlip:   gid&GIDDiagonalFlip != 0,
 				Nil:            false,
 			}, nil
 		}
@@ -412,5 +400,10 @@ type DecodedTile struct {
 	Tileset        *Tileset
 	HorizontalFlip bool
 	VerticalFlip   bool
+	DiagonalFlip   bool
 	Nil            bool
+}
+
+func (t *DecodedTile) IsNil() bool {
+	return t.Nil
 }
