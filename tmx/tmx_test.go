@@ -73,14 +73,15 @@ func TestRead(t *testing.T) {
 		}
 	}
 
-	chkLayerData := func(originalData, readData []GID) {
+	chkLayerData := func(originalGIDs []GID, decodedTiles []*DecodedTile) {
 		if len(readData) != len(originalData) {
 			t.Error("Wrong number of tiles", len(readData), "Should be", len(originalData))
 			return
 		}
 
-		for i, gid := range readData {
-			if originalData[i] != gid {
+		for i, tile := range decodedTiles {
+			originalTile, _ := m.DecodeGID(originalData[i]) 
+			if originalTile.ID != tile.ID {
 				t.Error("Wrong gid at position", i)
 				return
 			}

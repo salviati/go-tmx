@@ -53,7 +53,7 @@ var (
 )
 
 var (
-	NilTile = &DecodedTile{Nil: false}
+	NilTile = &DecodedTile{Nil: true}
 )
 
 type GID uint32 // A tile ID. Could be used for GID or ID.
@@ -130,7 +130,7 @@ type Object struct {
 	Type      string     `xml:"type,attr"`
 	X         int        `xml:"x,attr"`
 	Y         int        `xml:y",attr"`
-	Width     int        `xml:"widrg,attr"`
+	Width     int        `xml:"width,attr"`
 	Height    int        `xml:"height,attr"`
 	GID       int        `xml:"gid,attr"`
 	Visible   bool       `xml:"visible,attr"`
@@ -332,7 +332,7 @@ func decodePoints(s string) (points []Point, err error) {
 			return []Point{}, err
 		}
 
-		points[i].Y, err = strconv.Atoi(coordStrings[0])
+		points[i].Y, err = strconv.Atoi(coordStrings[1])
 		if err != nil {
 			return []Point{}, err
 		}

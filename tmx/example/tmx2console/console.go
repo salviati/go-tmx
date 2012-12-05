@@ -75,7 +75,7 @@ func Do(c Console, filename string) error {
 	}
 	filenameBare := filename[:len(filename)-len(ext)-1]
 
-	save := func(l *tmx.Layer, w io.WriteCloser) error {
+	saveLayer := func(l *tmx.Layer, w io.WriteCloser) error {
 		defer w.Close()
 		b := w
 
@@ -117,7 +117,7 @@ func Do(c Console, filename string) error {
 		return nil
 	}
 
-	saveBitmap := func(l *tmx.Layer, w io.WriteCloser) error {
+	saveLayerBitmap := func(l *tmx.Layer, w io.WriteCloser) error {
 		defer w.Close()
 
 		i := uint(0)
@@ -154,11 +154,11 @@ func Do(c Console, filename string) error {
 		defer f.Close()
 
 		if bitmap == "true" {
-			if err := saveBitmap(l, f); err != nil {
+			if err := saveLayerBitmap(l, f); err != nil {
 				return err
 			}
 		} else {
-			if err := save(l, f); err != nil {
+			if err := saveLayer(l, f); err != nil {
 				return err
 			}
 		}

@@ -54,7 +54,7 @@ package main
 
 /*
   TODO(utkan): Add Huffman1 for the sake of obstruction layer
-  TODO(utkan): Process tilesets as well; export image and palette data. Options: compression, tile-reduction, tile bpp, remove unused/duplicate tiles.
+  TODO(utkan): Process tilesets as well; export image and palette data. Options: compression, tile-reduction (unused/duplicate/flipped).
   TODO(utkan): Add a .map file that will completely describe how to load the whole map.
   TODO(utkan): Long-term: NES, SNES, Mega Drive, etc.
 */
