@@ -84,6 +84,8 @@ type Tileset struct {
 	Properties []Property `xml:"properties>property"`
 	Image      Image      `xml:"image"`
 	Tiles      []Tile     `xml:"tile"`
+	Tilecount  int        `xml:"tilecount,attr"`
+	Columns    int        `xml:"columns,attr"`
 }
 
 type Image struct {
