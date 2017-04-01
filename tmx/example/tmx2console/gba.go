@@ -53,7 +53,7 @@ func (g *GBA) isAffine(l *tmx.Layer) bool {
 
 	affine, ok := g.isAffineCache[l]
 	if !ok {
-		affineString, _ := GetProperty(&l.Properties, "Affine")
+		affineString, _ := GetProperty(l.Properties, "Affine")
 		affine = affineString == "true"
 		g.isAffineCache[l] = affine
 	}
@@ -69,7 +69,7 @@ func (g *GBA) nilTile(m *tmx.Map, l *tmx.Layer) interface{} {
 	nilTile, ok := g.nilTileCache[l]
 	if !ok {
 		nilTile := uint16(len(l.Tileset.Tiles))
-		nilTileString, _ := GetProperty(&l.Properties, "NilTile")
+		nilTileString, _ := GetProperty(l.Properties, "NilTile")
 		nilTileNew, err := strconv.ParseUint(nilTileString, 10, 16)
 		if err == nil {
 			nilTile = uint16(nilTileNew)

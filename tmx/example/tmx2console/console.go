@@ -91,7 +91,7 @@ func Do(c Console, filename string) error {
 			return TooManyTiles
 		}
 
-		compression, _ := GetProperty(&l.Properties, "Compression")
+		compression, _ := GetProperty(l.Properties, "Compression")
 		if compression != "" {
 			compressionMethod, ok := CompressionMethods[compression]
 			if !ok {
@@ -144,7 +144,7 @@ func Do(c Console, filename string) error {
 	for i := 0; i < len(m.Layers); i++ {
 		l := &m.Layers[i]
 
-		bitmap, err := GetProperty(&l.Properties, "Bitmap")
+		bitmap, err := GetProperty(l.Properties, "Bitmap")
 
 		name := filenameBare + "." + l.Name + ".layer"
 		f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE, 0666)
