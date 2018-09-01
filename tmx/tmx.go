@@ -32,6 +32,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -372,6 +373,22 @@ func Read(r io.Reader) (*Map, error) {
 	}
 
 	return m, nil
+}
+
+func ReadFile(filePath string) (*Map, error) {
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	newMap, err := Read(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return newMap, err
+
 }
 
 func (m *Map) DecodeGID(gid GID) (*DecodedTile, error) {
