@@ -376,11 +376,12 @@ func Read(r io.Reader) (*Map, error) {
 }
 
 func ReadFile(filePath string) (*Map, error) {
-
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
+
+	defer f.Close()
 
 	newMap, err := Read(f)
 	if err != nil {
